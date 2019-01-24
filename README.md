@@ -26,7 +26,7 @@ python surface_norm_from_depth.py
 ```buildoutcfg
 python main.py --pos-weight 10 --use-normal --epoch 400 --exp-id 1 --lr 1e-3 --rot-angle 60.0
 ```
-#####Test the model
+##### Test the model
 ```buildoutcfg
 python test.py --use-normal --exp-id 2
 ```
