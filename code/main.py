@@ -1,4 +1,4 @@
-# python main.py --pos-weight 10 --use-normal --use-depth --epoch 400 --exp-id 1 --lr 1e-3 --rot-angle 60.0
+# python main.py --pos-weight 10 --epoch 400 --exp-id 1 --lr 1e-3 --rot-angle 180.0
 # TODO:
 # 1) Include denseCRF while evaluating
 
@@ -54,12 +54,7 @@ if not stop_image_store:
     import cv2
 
 # define models ================================================================
-if use_depth and use_normal:
-    model = UNet(inp_channel=7, num_classes=1, small_net=use_small_network).cuda()
-elif use_normal:
-    model = UNet(inp_channel=6, num_classes=1, small_net=use_small_network).cuda()
-else:
-    model = UNet(inp_channel=3, num_classes=1, small_net=use_small_network).cuda()
+model = UNet(inp_channel=3, num_classes=1, small_net=use_small_network).cuda()
 
 criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([args.pos_weight]).float().cuda())
 

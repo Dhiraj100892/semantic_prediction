@@ -11,9 +11,8 @@ def enumerate_data(**args):
     :return:
     """
     root = args['root_path']
-    color_data = glob.glob(root + '/color/*.png')
-    depth_data = glob.glob(root + '/depth/*.png')
-    label_data = glob.glob(root + '/label/*.png')
+    color_data = glob.glob(root + '/img/top_camera/*.JPG')
+    label_data = glob.glob(root + '/label/top_camera/*.png')
 
     out_file = open(root + '/data.txt', 'w')
     train_out_file = open(root + '/train_data.txt', 'w')
@@ -21,11 +20,11 @@ def enumerate_data(**args):
     train_ratio = 0.9
 
     for i in range(len(color_data)):
-        out_file.write(color_data[i] + ' ' + depth_data[i] + ' ' + label_data[i] + '\n')
+        out_file.write(color_data[i] + ' ' + label_data[i] + '\n')
         if random.random() < train_ratio:
-            train_out_file.write(color_data[i] + ' ' + depth_data[i] + ' ' + label_data[i] + '\n')
+            train_out_file.write(color_data[i] + ' ' + label_data[i] + '\n')
         else:
-            val_out_file.write(color_data[i] + ' ' + depth_data[i] + ' ' + label_data[i] + '\n')
+            val_out_file.write(color_data[i] + ' ' + label_data[i] + '\n')
 
     out_file.close()
     train_out_file.close()

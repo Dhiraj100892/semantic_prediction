@@ -10,21 +10,21 @@ class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, img, mask, depth, normal):
+    def __call__(self, img, mask):
         assert img.size == mask.size
         for t in self.transforms:
-            img, mask, depth, normal = t(img, mask, depth, normal)
-        return img, mask, depth, normal
+            img, mask = t(img, mask)
+        return img, mask
 
 
 class ComposeTest(object):
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, img, depth, normal):
+    def __call__(self, img):
         for t in self.transforms:
-            img, depth, normal = t(img, depth, normal)
-        return img, depth, normal
+            img = t(img)
+        return img
 
 
 class RandomCrop(object):
@@ -35,26 +35,22 @@ class RandomCrop(object):
             self.size = size
         self.padding = padding
 
-    def __call__(self, img, mask, depth, normal):
+    def __call__(self, img, mask):
         if self.padding > 0:
             img = ImageOps.expand(img, border=self.padding, fill=0)
             mask = ImageOps.expand(mask, border=self.padding, fill=0)
-            depth = ImageOps.expand(depth, border=self.padding, fill=0)
-            normal = ImageOps.expand(normal, border=self.padding, fill=0)
 
         assert img.size == mask.size
         w, h = img.size
         th, tw = self.size
         if w == tw and h == th:
-            return img, mask, depth, normal
+            return img, mask
         if w < tw or h < th:
-            return img.resize((tw, th), Image.BILINEAR), mask.resize((tw, th), Image.NEAREST), \
-                   depth.resize((tw, th), Image.NEAREST), normal.resize((tw, th), Image.NEAREST)
+            return img.resize((tw, th), Image.BILINEAR), mask.resize((tw, th), Image.NEAREST)
 
         x1 = random.randint(0, w - tw)
         y1 = random.randint(0, h - th)
-        return img.crop((x1, y1, x1 + tw, y1 + th)), mask.crop((x1, y1, x1 + tw, y1 + th)), \
-               depth.crop((x1, y1, x1 + tw, y1 + th)), normal.crop((x1, y1, x1 + tw, y1 + th))
+        return img.crop((x1, y1, x1 + tw, y1 + th)), mask.crop((x1, y1, x1 + tw, y1 + th))
 
 
 class CenterCrop(object):
@@ -74,59 +70,53 @@ class CenterCrop(object):
 
 
 class RandomHorizontallyFlip(object):
-    def __call__(self, img, mask, depth, normal):
+    def __call__(self, img, mask):
         if random.random() < 0.5:
-            return img.transpose(Image.FLIP_LEFT_RIGHT), mask.transpose(Image.FLIP_LEFT_RIGHT),\
-                   depth.transpose(Image.FLIP_LEFT_RIGHT), normal.transpose(Image.FLIP_LEFT_RIGHT)
-        return img, mask, depth, normal
+            return img.transpose(Image.FLIP_LEFT_RIGHT), mask.transpose(Image.FLIP_LEFT_RIGHT)
+        return img, mask
 
 
 class FreeScale(object):
     def __init__(self, size):
         self.size = tuple(reversed(size))  # size: (h, w)
 
-    def __call__(self, img, mask, depth, normal):
+    def __call__(self, img, mask):
         assert img.size == mask.size
-        return img.resize(self.size, Image.BILINEAR), mask.resize(self.size, Image.NEAREST),\
-               depth.resize(self.size, Image.NEAREST), normal.resize(self.size, Image.NEAREST)
+        return img.resize(self.size, Image.BILINEAR), mask.resize(self.size, Image.NEAREST)
 
 
 class FreeScaleTest(object):
     def __init__(self, size):
         self.size = tuple(reversed(size))  # size: (h, w)
 
-    def __call__(self, img, depth, normal):
-        return img.resize(self.size, Image.BILINEAR),\
-               depth.resize(self.size, Image.NEAREST),\
-               normal.resize(self.size, Image.NEAREST)
+    def __call__(self, img):
+        return img.resize(self.size, Image.BILINEAR)
 
 
 class Scale(object):
     def __init__(self, size):
         self.size = size
 
-    def __call__(self, img, mask, depth, normal):
+    def __call__(self, img, mask):
         assert img.size == mask.size
         w, h = img.size
         if (w >= h and w == self.size) or (h >= w and h == self.size):
-            return img, mask. depth, normal
+            return img, mask
         if w > h:
             ow = self.size
             oh = int(self.size * h / w)
-            return img.resize((ow, oh), Image.BILINEAR), mask.resize((ow, oh), Image.NEAREST), \
-                   depth.resize((ow, oh), Image.NEAREST), normal.resize((ow, oh), Image.NEAREST)
+            return img.resize((ow, oh), Image.BILINEAR), mask.resize((ow, oh), Image.NEAREST)
         else:
             oh = self.size
             ow = int(self.size * w / h)
-            return img.resize((ow, oh), Image.BILINEAR), mask.resize((ow, oh), Image.NEAREST), \
-                   depth.resize((ow, oh), Image.NEAREST), normal.resize((ow, oh), Image.NEAREST)
+            return img.resize((ow, oh), Image.BILINEAR), mask.resize((ow, oh), Image.NEAREST)
 
 
 class RandomSizedCrop(object):
     def __init__(self, size):
         self.size = size
 
-    def __call__(self, img, mask, depth, normal):
+    def __call__(self, img, mask):
         assert img.size == mask.size
         for attempt in range(10):
             area = img.size[0] * img.size[1]
@@ -148,27 +138,24 @@ class RandomSizedCrop(object):
                 assert (img.size == (w, h))
 
                 return img.resize((self.size, self.size), Image.BILINEAR), mask.resize((self.size, self.size),
-                                                                                       Image.NEAREST), \
-                       depth.resize((self.size, self.size), Image.BILINEAR), \
-                       normal.resize((self.size, self.size), Image.BILINEAR)
+                                                                                       Image.NEAREST)
 
         # Fallback
         scale = Scale(self.size)
         crop = CenterCrop(self.size)
-        return crop(*scale(img, mask, depth, normal))
+        return crop(*scale(img, mask))
 
 
 class RandomRotate(object):
     def __init__(self, degree):
         self.degree = degree
 
-    def __call__(self, img, mask, depth, normal):
+    def __call__(self, img, mask):
         if random.random() < 0.5:
-            return img, mask, depth, normal
+            return img, mask
 
         rotate_degree = random.random() * 2 * self.degree - self.degree
-        return img.rotate(rotate_degree, Image.BILINEAR), mask.rotate(rotate_degree, Image.NEAREST), \
-               depth.rotate(rotate_degree, Image.NEAREST), normal.rotate(rotate_degree, Image.NEAREST)
+        return img.rotate(rotate_degree, Image.BILINEAR), mask.rotate(rotate_degree, Image.NEAREST)
 
 
 class RandomSized(object):
