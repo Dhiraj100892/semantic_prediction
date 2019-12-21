@@ -100,10 +100,6 @@ val_input_transform = standard_transforms.Compose([
     standard_transforms.ToTensor(),
     standard_transforms.Normalize(*mean_std)])
 
-normal_transform = standard_transforms.Compose([
-    standard_transforms.ToTensor(),
-    standard_transforms.Normalize(*normal_mean_std)])
-
 restore_transform = standard_transforms.Compose([
     extended_transforms.DeNormalize(*mean_std),
     standard_transforms.ToPILImage()])
@@ -114,20 +110,17 @@ if no_augmentation:
     train_dataset = SuctionDataset(train_data_file_path,
                                    root_path=root_path,
                                    joint_transform=val_joint_transform,
-                                   transform=val_input_transform,
-                                   normal_transform=normal_transform)
+                                   transform=val_input_transform)
 else:
     train_dataset = SuctionDataset(train_data_file_path,
                                    root_path=root_path,
                                    joint_transform=train_joint_transform,
-                                   transform=train_input_transform,
-                                   normal_transform=normal_transform)
+                                   transform=train_input_transform)
 
 val_dataset = SuctionDataset(val_data_file_path,
                              root_path=root_path,
                              joint_transform=val_joint_transform,
-                             transform=val_input_transform,
-                             normal_transform=normal_transform)
+                             transform=val_input_transform)
 
 train_dataset_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
 val_dataset_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
