@@ -4,9 +4,9 @@ import argparse
 
 def get_args():
     parser = argparse.ArgumentParser(description='Arguments for suction challenge')
-    parser.add_argument('--train-data-file-path', type=str, default='../../../data/train_data.txt',
+    parser.add_argument('--train-data-file-path', type=str, default='../../../data/train_hand_data.txt',
                         help='path to train file txt')
-    parser.add_argument('--val-data-file-path', type=str, default='../../../data/val_data.txt',
+    parser.add_argument('--val-data-file-path', type=str, default='../../../data/val_hand_data.txt',
                         help='path to val file txt')
     parser.add_argument('--test-data-file-path', type=str, default='../../../data/test_data.txt',
                         help='path to test file txt')
@@ -19,9 +19,9 @@ def get_args():
                         help='Weight on the positive data point (default: 10)')
     parser.add_argument('--batch-size', type=int, default=16,
                         help='batch size for training (default: 16)')
-    parser.add_argument('--log-dir', default='../../logs/',
+    parser.add_argument('--log-dir', default='../../logs_hand/',
                         help='directory to save agent logs (default: ./logs/)')
-    parser.add_argument('--save-dir', default='../../results/',
+    parser.add_argument('--save-dir', default='../../results_hand/',
                         help='directory to save evaluation result in testing(useful while testing)')
     parser.add_argument('--save-iter', type=int, default=2000,
                         help='after how many iteration to save the data')
