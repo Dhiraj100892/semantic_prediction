@@ -17,7 +17,6 @@ class SuctionDataset(Dataset):
         self.lines = open(data_file).readlines()
         self.joint_transform = joint_transform
         self.transform = transform
-        self.normal_transform = normal_transform
         self.root_path = root_path
 
     def __len__(self):
