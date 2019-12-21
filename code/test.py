@@ -2,7 +2,7 @@
 # --exp-id 31 --save-dir /path/to/save/results
 
 from data_loader import SuctionTestDataset
-from model import UNet
+from model import UNet, ResNetUNet
 from torch.utils.data import DataLoader
 import torchvision.transforms as standard_transforms
 import utils.joint_transforms as joint_transforms
@@ -32,6 +32,7 @@ stop_image_store = args.stop_image_store
 log_dir = '{}{:04d}'.format(args.log_dir, args.exp_id)
 print("log_dir = {}".format(log_dir))
 writer = SummaryWriter(log_dir=log_dir)
+use_resnet = args.use_resnet
 
 
 # create result save dire ======================================================
@@ -48,7 +49,10 @@ if not os.path.isdir(heatmap_save_dir):
     os.makedirs(os.path.join(save_dir, 'heatmap'))
 
 # define models ================================================================
-model = UNet(inp_channel=3, num_classes=1, small_net=use_small_network).cuda()
+if use_resnet:
+    model = ResNetUNet(n_class=1).cuda()
+else:
+    model = UNet(inp_channel=3, num_classes=1, small_net=use_small_network).cuda()
 
 # define data loader ===========================================================
 mean_std = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
