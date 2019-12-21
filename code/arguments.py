@@ -41,6 +41,8 @@ def get_args():
                         help='the angles by which we can rotate image for data augmentation')
     parser.add_argument('--no-augmentation', action='store_true', default=False,
                         help='whether to do data augmentation during training ')
+    parser.add_argument('--use_resnet', action='store_true', default=False,
+                        help='use pretrained resent')
 
     args = parser.parse_args()
     return args

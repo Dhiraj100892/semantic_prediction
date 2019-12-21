@@ -5,7 +5,7 @@
 import torch.nn as nn
 from torch import optim
 from data_loader import SuctionDataset
-from model import UNet
+from model import UNet, ResNetUNet
 from torch.utils.data import DataLoader
 import torchvision.transforms as standard_transforms
 import utils.joint_transforms as joint_transforms
@@ -40,6 +40,7 @@ no_augmentation = args.no_augmentation
 train_data_file_path = args.train_data_file_path
 val_data_file_path = args.val_data_file_path
 root_path = args.root_path
+use_resnet = args.use_resnet
 
 # write hyper params to file
 args_dict = vars(args)
@@ -52,7 +53,10 @@ if not stop_image_store:
     import cv2
 
 # define models ================================================================
-model = UNet(inp_channel=3, num_classes=1, small_net=use_small_network).cuda()
+if use_resnet:
+    model = ResNetUNet(n_class=1)
+else:
+    model = UNet(inp_channel=3, num_classes=1, small_net=use_small_network).cuda()
 
 criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([args.pos_weight]).float().cuda())
 
