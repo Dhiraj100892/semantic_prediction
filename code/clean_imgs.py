@@ -3,9 +3,9 @@ import cv2
 import glob
 import os
 
-img_root_path = '../data/img/top_camera'
+img_root_path = '/home/sawyer/projects/trash_picker/data/images_png/'
 
-img_name_list = glob.glob(os.path.join(img_root_path, '*.JPG'))
+img_name_list = glob.glob(os.path.join(img_root_path, '*.png'))
 img_name_list.sort()
 
 for img_name in img_name_list:

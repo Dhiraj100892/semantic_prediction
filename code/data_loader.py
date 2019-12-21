@@ -8,7 +8,7 @@ import os
 
 class SuctionDataset(Dataset):
     """ Suction data set .. only using images """
-    def __init__(self, data_file, root_path = None, joint_transform=None, transform=None, normal_transform=None):
+    def __init__(self, data_file, root_path = None, joint_transform=None, transform=None):
         """
         Args:
             transform (callable, optional): Optional transform to be applied
@@ -26,7 +26,7 @@ class SuctionDataset(Dataset):
     def __getitem__(self, idx):
         word = self.lines[idx].split(' ')
         img = Image.open(os.path.join(self.root_path, word[0])).convert('RGB')
-        mask = Image.open(os.path.join(self.root_path, word[2]))
+        mask = Image.open(os.path.join(self.root_path, word[1][:-1]))
 
         if self.joint_transform is not None:
             img, mask = self.joint_transform(img, mask)
@@ -45,7 +45,7 @@ class SuctionDataset(Dataset):
 
 class SuctionTestDataset(Dataset):
     """ Suction data set .. only using images """
-    def __init__(self, data_file, root_path = None, joint_transform=None, transform=None, normal_transform=None):
+    def __init__(self, data_file, root_path = None, joint_transform=None, transform=None):
         """
         Args:
             transform (callable, optional): Optional transform to be applied
@@ -54,15 +54,14 @@ class SuctionTestDataset(Dataset):
         self.lines = open(data_file).readlines()
         self.joint_transform = joint_transform
         self.transform = transform
-        self.normal_transform = normal_transform
         self.root_path = root_path
 
     def __len__(self):
         return len(self.lines)
 
     def __getitem__(self, idx):
-        word = self.lines[idx].split(' ')
-        img = Image.open(os.path.join(self.root_path, word[0])).convert('RGB')
+        word = self.lines[idx][:-1]
+        img = Image.open(os.path.join(self.root_path, word)).convert('RGB')
 
         if self.joint_transform is not None:
             img = self.joint_transform(img)
@@ -70,7 +69,7 @@ class SuctionTestDataset(Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        word_split = word[0].split('/')
+        word_split = word.split('/')
         data_name = word_split[-1]
         sample = {'img': img,
                   'data_name': data_name}

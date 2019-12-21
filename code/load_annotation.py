@@ -6,8 +6,8 @@ import cv2
 from IPython import embed
 import numpy as np
 
-img_root_path = '../data/img/top_camera'
-out_path = '../data/label/top_camera'
+img_root_path = '../../../data/img/top_camera'
+out_path = '../../../data/label/top_camera'
 annot_file = '../annot/top_camera_annot.json'
 
 if not os.path.isdir(out_path):

@@ -1,4 +1,4 @@
-# python main.py --pos-weight 10 --epoch 400 --exp-id 1 --lr 1e-3 --rot-angle 180.0
+# python main.py --pos-weight 11 --epoch 400 --exp-id 1 --lr 1e-3 --rot-angle 180.0
 # TODO:
 # 1) Include denseCRF while evaluating
 
@@ -26,7 +26,6 @@ args = get_args()
 # assign arguments
 lr = args.lr
 num_epoch = args.epochs
-use_normal = args.use_normal
 save_iter = args.save_iter
 log_dir = '{}{:04d}'.format(args.log_dir, args.exp_id)
 print("log_dir = {}".format(log_dir))
@@ -37,7 +36,6 @@ stop_jitter = args.stop_jitter
 stop_random_rotation = args.stop_random_rotation
 use_small_network = args.use_small_network
 rot_angle = args.rot_angle
-use_depth = args.use_depth
 no_augmentation = args.no_augmentation
 train_data_file_path = args.train_data_file_path
 val_data_file_path = args.val_data_file_path
@@ -166,15 +164,7 @@ def train(epoch):
         inp = data['img'].cuda()
         gt_mask = data['mask'].cuda()
 
-        if use_depth and use_normal:
-            depth = data['depth'].cuda()
-            normal = data['normal'].cuda()
-            pred_mask = model(torch.cat((inp, normal, depth), 1))
-        elif use_normal:
-            normal = data['normal'].cuda()
-            pred_mask = model(torch.cat((inp, normal), 1))
-        else:
-            pred_mask = model(inp)
+        pred_mask = model(inp)
 
         gt_mask_flat = gt_mask.view(-1)
         pred_mask_flat = pred_mask.view(-1)
@@ -246,15 +236,7 @@ def val(epoch):
             inp = data['img'].cuda()
             gt_mask = data['mask'].cuda()
 
-            if use_depth and use_normal:
-                depth = data['depth'].cuda()
-                normal = data['normal'].cuda()
-                pred_mask = model(torch.cat((inp, normal, depth), 1))
-            elif use_normal:
-                normal = data['normal'].cuda()
-                pred_mask = model(torch.cat((inp, normal), 1))
-            else:
-                pred_mask = model(inp)
+            pred_mask = model(inp)
 
             gt_mask_flat = gt_mask.view(-1)
             pred_mask_flat = pred_mask.view(-1)

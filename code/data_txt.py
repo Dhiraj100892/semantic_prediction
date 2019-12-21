@@ -14,6 +14,9 @@ def enumerate_data(**args):
     color_data = glob.glob(root + '/img/top_camera/*.JPG')
     label_data = glob.glob(root + '/label/top_camera/*.png')
 
+    color_data.sort() 
+    label_data.sort()
+
     out_file = open(root + '/data.txt', 'w')
     train_out_file = open(root + '/train_data.txt', 'w')
     val_out_file = open(root + '/val_data.txt', 'w')
