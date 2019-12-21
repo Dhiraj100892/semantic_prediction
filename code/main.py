@@ -54,7 +54,7 @@ if not stop_image_store:
 
 # define models ================================================================
 if use_resnet:
-    model = ResNetUNet(n_class=1)
+    model = ResNetUNet(n_class=1).cuda()
 else:
     model = UNet(inp_channel=3, num_classes=1, small_net=use_small_network).cuda()
 
