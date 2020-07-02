@@ -124,7 +124,7 @@ def test():
                 numpy_data = cv2.resize(numpy_data, org_img_size).astype(np.float32) / 255.0
 
                 # heatmap images
-                org_img = cv2.imread(os.path.join(root_path, '/home/sawyer/projects/trash_picker/data/images_png', data['data_name'][i]))
+                org_img = cv2.imread(os.path.join(root_path, data['path'][i]))
                 heatmap = cv2.resize(cv2.applyColorMap((255*numpy_data).astype(np.uint8), cv2.COLORMAP_JET),
                                      org_img_size)
                 heatmap_file_name = os.path.join(heatmap_save_dir, data['data_name'][i])

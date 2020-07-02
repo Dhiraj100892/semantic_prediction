@@ -71,5 +71,6 @@ class SuctionTestDataset(Dataset):
         word_split = word.split('/')
         data_name = word_split[-1]
         sample = {'img': img,
-                  'data_name': data_name}
+                  'data_name': data_name,
+                  'path': word}
         return sample
