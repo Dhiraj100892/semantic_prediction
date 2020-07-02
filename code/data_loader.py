@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 
-class SuctionDataset(Dataset):
+class TrashPickerDataset(Dataset):
     """ Suction data set .. only using images """
     def __init__(self, data_file, root_path = None, joint_transform=None, transform=None):
         """

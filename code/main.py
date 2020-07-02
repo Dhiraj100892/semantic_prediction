@@ -4,7 +4,7 @@
 
 import torch.nn as nn
 from torch import optim
-from data_loader import SuctionDataset
+from data_loader import TrashPickerDataset
 from model import UNet, ResNetUNet
 from torch.utils.data import DataLoader
 import torchvision.transforms as standard_transforms
@@ -20,6 +20,8 @@ from PIL import Image
 import torch.nn.functional as F
 import random
 import time
+import torchvision.models as models
+
 # setup argument formalities ===================================================
 args = get_args()
 
@@ -41,8 +43,9 @@ train_data_file_path = args.train_data_file_path
 val_data_file_path = args.val_data_file_path
 root_path = args.root_path
 use_resnet = args.use_resnet
+use_multigpu = args.use_multigpu
 
-# write hyper params to file
+# write hyper params to file ===================================================
 args_dict = vars(args)
 arg_file = open(log_dir + '/args.txt', 'w')
 for arg_key in args_dict.keys():
@@ -52,13 +55,26 @@ arg_file.close()
 if not stop_image_store:
     import cv2
 
+# define the device ============================================================
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # define models ================================================================
 if use_resnet:
-    model = ResNetUNet(n_class=1).cuda()
+    model = ResNetUNet(n_class=1)
 else:
-    model = UNet(inp_channel=3, num_classes=1, small_net=use_small_network).cuda()
+    model = UNet(inp_channel=3, num_classes=1, small_net=use_small_network)
 
-criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([args.pos_weight]).float().cuda())
+# multi GPU ====================================================================
+if use_multigpu:
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+        model = nn.DataParallel(model)
+
+model = model.to(device)
+
+# define loss ==================================================================
+criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([args.pos_weight]).float()).to(device)
 
 # define optimizer =============================================================
 optimizer = optim.SGD(model.parameters(),
@@ -68,7 +84,6 @@ optimizer = optim.SGD(model.parameters(),
 
 # define data loader ===========================================================
 mean_std = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-normal_mean_std = ([0.5, 0.5, 0.5], [0.25, 0.25, 0.25])
 short_size = int(min(inp_size) / 0.875)
 
 if stop_random_rotation:
@@ -107,17 +122,17 @@ restore_transform = standard_transforms.Compose([
 visualize = standard_transforms.ToTensor()
 
 if no_augmentation:
-    train_dataset = SuctionDataset(train_data_file_path,
+    train_dataset = TrashPickerDataset(train_data_file_path,
                                    root_path=root_path,
                                    joint_transform=val_joint_transform,
                                    transform=val_input_transform)
 else:
-    train_dataset = SuctionDataset(train_data_file_path,
+    train_dataset = TrashPickerDataset(train_data_file_path,
                                    root_path=root_path,
                                    joint_transform=train_joint_transform,
                                    transform=train_input_transform)
 
-val_dataset = SuctionDataset(val_data_file_path,
+val_dataset = TrashPickerDataset(val_data_file_path,
                              root_path=root_path,
                              joint_transform=val_joint_transform,
                              transform=val_input_transform)
@@ -158,8 +173,8 @@ def train(epoch):
     vis = False
     for j, data in enumerate(train_dataset_loader):
         start_time = time.time()
-        inp = data['img'].cuda()
-        gt_mask = data['mask'].cuda()
+        inp = data['img'].to(device)
+        gt_mask = data['mask'].to(device)
 
         pred_mask = model(inp)
 
@@ -230,8 +245,8 @@ def val(epoch):
     loop_start = time.time()
     for j, data in enumerate(val_dataset_loader):
         with torch.no_grad():
-            inp = data['img'].cuda()
-            gt_mask = data['mask'].cuda()
+            inp = data['img'].to(device)
+            gt_mask = data['mask'].to(device)
 
             pred_mask = model(inp)
 
