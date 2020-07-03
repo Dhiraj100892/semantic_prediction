@@ -1,3 +1,6 @@
+# Finger Tip Prediction
+![example](./img/teaser.gif)
+
 ## Download model file
 ```
 mkdir model
