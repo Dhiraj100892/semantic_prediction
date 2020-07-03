@@ -26,7 +26,6 @@ inp_size = (256, 512)
 use_small_network = args.use_small_network
 model_path = args.resume
 save_dir = args.save_dir
-org_img_size = (1920, 1080)
 root_path = args.root_path
 stop_image_store = args.stop_image_store
 log_dir = '{}{:04d}'.format(args.log_dir, args.exp_id)
@@ -79,6 +78,11 @@ test_dataset = SuctionTestDataset(test_data_file_path,
                                   joint_transform=test_joint_transform,
                                   transform=test_input_transform)
 test_dataset_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1)
+
+with open(args.test_data_file_path, 'r') as f:
+    l = os.path.join(root_path,f.readline()[:-1])
+    temp_img = cv2.imread(l)
+    org_img_size = (temp_img.shape[1], temp_img.shape[0])
 
 # load the model ===============================================================
 print("loading the model")
