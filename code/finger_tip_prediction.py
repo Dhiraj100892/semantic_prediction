@@ -6,6 +6,7 @@ import torch
 from torchvision import transforms
 import cv2
 from copy import deepcopy as copy
+from IPython import embed
 
 class FingerTipPred():
     def __init__(self, model_path, inp_size = (256,512)):
@@ -29,6 +30,24 @@ class FingerTipPred():
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
+
+        # input line equation
+        z = np.polyfit(np.array([558.59167816, 797.01748835]), np.array([447.19891699, 494.44119623]),1)
+
+        # find the points on one side of line find the tip points
+        p = np.poly1d(z)
+        mask = np.ones((1440, 1920)).astype(np.uint8)
+        mean_pt = [int(mask.shape[0]/2 + mask.shape[0]/20), int(mask.shape[1]/2 + mask.shape[0]/25)]
+        box_size = int(mask.shape[0]/2)
+        mask = mask[int(mean_pt[0]-box_size/2):int(mean_pt[0]+box_size/2), int(mean_pt[1]-box_size/2):int(mean_pt[1]+box_size/2)]
+        Y, X = np.nonzero(mask)
+        
+        for x, y in zip(X, Y):
+            if x - p(y) > -30:
+                mask[y,x] = 0
+        self.divider_mask = mask
+        self.divider_mask_2 = np.zeros_like(self.divider_mask)
+        self.divider_mask_2[160:220, 100:570] = 1.0
 
     def get_prediction(self, img, prob_thr = 0.5):
         """
@@ -67,29 +86,19 @@ class FingerTipPred():
         heatmap = cv2.addWeighted(img, 0.5, heatmap, 0.5, 0)
 
         # find the finger tip ######################### 
-        Y, X = np.nonzero(bin_img)
+        bin_img_pos = np.logical_and(np.logical_and(bin_img>0, self.divider_mask == 0), self.divider_mask_2 == 1.0)
+        bin_img_neg = np.logical_and(np.logical_and(bin_img>0, self.divider_mask > 0),  self.divider_mask_2 == 1.0)
+        Y, X = np.nonzero(bin_img_pos.astype(np.uint8))
+        indx = np.argmin(Y)
+        pos_p = {'x':X[indx],'y':Y[indx]}
         
-        # input line equation
-        z = np.polyfit(np.array([558.59167816, 797.01748835]), np.array([447.19891699, 494.44119623]),1)
-
-        # find the points on one side of line find the tip points
-        p = np.poly1d(z)
-
-        pos_p = None
-        neg_p = None
-        for x, y in zip(X, Y):
-            if x - p(y) > 0:
-                #img[y][x] = 0
-                if pos_p is None or pos_p['y'] > y:
-                    pos_p = {'x':x, 'y':y}
-            else:
-                if neg_p is None or neg_p['y'] > y:
-                    neg_p = {'x':x, 'y':y}
-
+        Y, X = np.nonzero(bin_img_neg.astype(np.uint8))
+        indx = np.argmin(Y)
+        neg_p = {'x':X[indx],'y':Y[indx]}
+        
         cv2.circle(heatmap, (pos_p['x'], pos_p['y']), radius=50, color=(0), thickness=25)
         cv2.circle(heatmap, (neg_p['x'], neg_p['y']), radius=50, color=(0), thickness=25)
 
         cv2.circle(org_img, (int(mean_pt[1]-box_size/2) + pos_p['x'], int(mean_pt[0]-box_size/2) + pos_p['y']), radius=50, color=(0), thickness=25)
         cv2.circle(org_img, (int(mean_pt[1]-box_size/2) + neg_p['x'], int(mean_pt[0]-box_size/2) + neg_p['y']), radius=50, color=(0), thickness=25)
-
-        return {'finger_1': (int(mean_pt[1]-box_size/2) + pos_p['x'], int(mean_pt[0]-box_size/2) + pos_p['y']), 'finger_2': (int(mean_pt[1]-box_size/2) + neg_p['x'], int(mean_pt[0]-box_size/2) + neg_p['y'])}, heatmap, org_img
+        return {'finger_1': (int(mean_pt[1]-box_size/2) + pos_p['x'], int(mean_pt[0]-box_size/2) + pos_p['y']), 'finger_2': (int(mean_pt[1]-box_size/2) + neg_p['x'], int(mean_pt[0]-box_size/2) + neg_p['y'])},heatmap, org_img

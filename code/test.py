@@ -1,7 +1,7 @@
 # python test.py --root-path /path/to/root/data/directory --use-normal --resume /path/to/model/file
 # --exp-id 31 --save-dir /path/to/save/results
 
-from data_loader import SuctionTestDataset
+from data_loader import TrashPickerTestDataset
 from model import UNet, ResNetUNet
 from torch.utils.data import DataLoader
 import torchvision.transforms as standard_transforms
@@ -32,6 +32,7 @@ log_dir = '{}{:04d}'.format(args.log_dir, args.exp_id)
 print("log_dir = {}".format(log_dir))
 writer = SummaryWriter(log_dir=log_dir)
 use_resnet = args.use_resnet
+prob_thr = [0.5, 0.75, 0.9]
 
 
 # create result save dire ======================================================
@@ -73,11 +74,11 @@ restore_transform = standard_transforms.Compose([
 visualize = standard_transforms.ToTensor()
 
 test_data_file_path = os.path.join(root_path, args.test_data_file_path)
-test_dataset = SuctionTestDataset(test_data_file_path,
-                                  root_path=root_path,
-                                  joint_transform=test_joint_transform,
-                                  transform=test_input_transform)
-test_dataset_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1)
+test_dataset = TrashPickerTestDataset(test_data_file_path,
+                                    root_path=root_path,
+                                    joint_transform=test_joint_transform,
+                                    transform=test_input_transform)
+test_dataset_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
 with open(args.test_data_file_path, 'r') as f:
     l = os.path.join(root_path,f.readline()[:-1])
@@ -109,7 +110,7 @@ def test():
                                        visualize(pred_mask_heatmap)])
 
             # store the output
-            pred_porb_bin = pred_prob > 0.5
+            pred_porb_bin = pred_prob > prob_thr
             for i in range(pred_prob.shape[0]):
                 temp_data = (255 * pred_porb_bin[i].data.cpu().numpy().astype(np.float32)).astype(np.uint8)[0,:,:]
                 # grey
