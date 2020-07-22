@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
 import os
-
+from IPython import embed
 
 class TrashPickerDataset(Dataset):
     """ Suction data set .. only using images """
@@ -77,4 +77,71 @@ class TrashPickerTestDataset(Dataset):
         sample = {'img': img,
                   'data_name': data_name,
                   'path': word}
+        return sample
+
+
+class TransitionDataset(Dataset):
+    """ Suction data set .. only using images """
+    def __init__(self, data_file, root_path = None, transform=None, crop_img = False):
+        """
+        Args:
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.lines = open(data_file).readlines()
+        self.transform = transform
+        self.root_path = root_path
+        self.crop_img = crop_img
+
+    def __len__(self):
+        return len(self.lines)
+
+    def __getitem__(self, idx):
+        word = self.lines[idx].split(' ')
+        img = Image.open(os.path.join(self.root_path, word[0])).convert('RGB')
+        if self.crop_img:
+            mean_pt = [int(img.size[0]/2 + img.size[1]/25), int(img.size[1]/2 + img.size[1]/25)]
+            box_size = int(img.size[1]/2)
+            img = img.crop((mean_pt[0]-box_size/2,int(mean_pt[1]-box_size/2), int(mean_pt[0]+box_size/2),int(mean_pt[1]+box_size/2)))
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        label = int(word[1][:-1])
+
+        sample = {'img': img,
+                  'label': label}
+
+        return sample
+
+class TransitionTestDataset(Dataset):
+    """ Suction data set .. only using images """
+    def __init__(self, data_file, root_path = None, transform=None, crop_img = False):
+        """
+        Args:
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.lines = open(data_file).readlines()
+        self.transform = transform
+        self.root_path = root_path
+        self.crop_img = crop_img
+
+    def __len__(self):
+        return len(self.lines)
+
+    def __getitem__(self, idx):
+        word = self.lines[idx][:-1]
+        img = Image.open(os.path.join(self.root_path, word)).convert('RGB')
+        if self.crop_img:
+            mean_pt = [int(img.size[0]/2 + img.size[1]/25), int(img.size[1]/2 + img.size[1]/25)]
+            box_size = int(img.size[1]/2)
+            img = img.crop((mean_pt[0]-box_size/2,int(mean_pt[1]-box_size/2), int(mean_pt[0]+box_size/2),int(mean_pt[1]+box_size/2)))
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        sample = {'img': img,
+                   'path': word}
+
         return sample

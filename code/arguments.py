@@ -45,6 +45,8 @@ def get_args():
                         help='use pretrained resent')
     parser.add_argument('--use_multigpu', action='store_true', default=False,
                         help='use multiple GPUS')
+    parser.add_argument('--crop_img', action='store_true', default=False,
+                        help='whether to crop images')    
     
 
     args = parser.parse_args()

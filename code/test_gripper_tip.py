@@ -18,6 +18,7 @@ import os
 import cv2
 from IPython import embed
 import torch.nn as nn
+from copy import deepcopy as copy
 
 # setup argument formalities ===================================================
 args = get_args()
@@ -30,13 +31,18 @@ save_dir = args.save_dir
 root_path = args.root_path
 stop_image_store = args.stop_image_store
 use_resnet = args.use_resnet
-prob_thr = [0.5, 0.9]
+prob_thr = [0.2,0.5,0.9]
 
 
 # create result save dire ======================================================
 for p in prob_thr:
     if not os.path.isdir(os.path.join(save_dir, str(p).replace('.','_'))):
         os.makedirs(os.path.join(save_dir, str(p).replace('.','_')))
+
+# create file for storing the finger tip location ==============================
+file_list = []
+for p in prob_thr:
+    file_list.append(open(os.path.join(save_dir, str(p).replace('.','_'), 'finger_tip_dist.txt'), 'w'))
 
 # define the device ===========================================================
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -100,10 +106,11 @@ for x, y in zip(X, Y):
         divider_mask[y,x] = 0
 divider_mask_2 = np.zeros_like(divider_mask)
 divider_mask_2[170:290, 100:570] = 1.0
-temp = 255*np.expand_dims(divider_mask_2, -1)
-divider_mask_2_rgb = np.concatenate((temp,temp,temp),axis=2)
 # test =========================================================================
 def test():
+    prev_directory = len(prob_thr)*['']
+    divider_mask_2 = len(prob_thr)*[None]
+    divider_mask_2_rgb = len(prob_thr)*[None]
     model.eval()
     count = len(prob_thr)*[0]
     for j, data in enumerate(test_dataset_loader):
@@ -119,8 +126,21 @@ def test():
                 for i in range(pred_prob_bin.shape[0]):
                     bin_img = (255 * pred_prob_bin[i].data.cpu().numpy().astype(np.float32)).astype(np.uint8)[0,:,:]
                     bin_img = cv2.resize(bin_img, (720,720))
-                    bin_img_pos = np.logical_and(np.logical_and(bin_img>0, divider_mask == 0), divider_mask_2 == 1.0)
-                    bin_img_neg = np.logical_and(np.logical_and(bin_img>0, divider_mask > 0), divider_mask_2 == 1.0)
+
+                    # get the divider mask based on the intial image
+                    directory = os.path.join(*data['path'][i].split('/')[:-1])
+                    if directory != prev_directory[p_indx]:
+                        prev_directory[p_indx] = directory
+                        contours,hierarchy = cv2.findContours(bin_img, 1, 2) 
+                        c_index = np.argmax([cv2.contourArea(cnt) for cnt in contours])
+                        hull = cv2.convexHull(contours[c_index])
+                        divider_mask_2[p_indx] = np.zeros_like(bin_img)
+                        cv2.fillConvexPoly(divider_mask_2[p_indx],hull,255)   
+                        temp = np.expand_dims(divider_mask_2[p_indx], -1)
+                        divider_mask_2_rgb[p_indx] = np.concatenate((temp,temp,temp),axis=2)
+
+                    bin_img_pos = np.logical_and(np.logical_and(bin_img>0, divider_mask == 0), divider_mask_2[p_indx] > 0)
+                    bin_img_neg = np.logical_and(np.logical_and(bin_img>0, divider_mask > 0), divider_mask_2[p_indx] > 0)
                      
                     # org_img
                     pil_image = restore_transform(inp[i].data.cpu())
@@ -146,10 +166,14 @@ def test():
 
                     # store image
                     heatmap = cv2.resize(cv2.applyColorMap((255*pred_prob[i].data.cpu().numpy()[0]).astype(np.uint8), cv2.COLORMAP_JET), (720,720))
-                    org_image = cv2.addWeighted(heatmap, 0.5, org_image, 0.5, 0)
-                    org_image = cv2.addWeighted(divider_mask_2_rgb, 0.5, org_image, 0.5, 0)
+                    org_image = cv2.addWeighted(heatmap, 0.3, org_image, 0.7, 0)
+                    org_image = cv2.addWeighted(divider_mask_2_rgb[p_indx], 0.2, org_image, 0.8, 0)
                     cv2.imwrite(os.path.join(save_dir, str(p_thr).replace('.','_'), '{:06d}.jpg'.format(count[p_indx])), org_image)
                     count[p_indx]+= 1
+                    finger_tip_dist = np.sqrt((pos_p['x'] - neg_p['x'])**2 + (pos_p['y'] - neg_p['y'])**2)
+                    file_list[p_indx].write(data['path'][i] + ' ' +  str(finger_tip_dist)+ '\n')
                     print("count = {}".format(count[p_indx]))
 
 test()
+for f in file_list:
+    f.close()

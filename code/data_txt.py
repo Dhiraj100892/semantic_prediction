@@ -2,6 +2,7 @@
 import glob
 import random
 import argparse
+from IPython import embed
 
 
 def enumerate_data(**args):
@@ -11,15 +12,15 @@ def enumerate_data(**args):
     :return:
     """
     root = args['root_path']
-    color_data = glob.glob(root + '/img/top_camera/*.JPG')
-    label_data = glob.glob(root + '/label/top_camera/*.png')
+    color_data = glob.glob('/private/home/dhirajgandhi/project/suction_challenge/data/img_crop_hand/top_camera/*.JPG') + glob.glob('/private/home/dhirajgandhi/project/suction_challenge/sampled_data_cropped/*.jpg')
+    label_data = glob.glob('/private/home/dhirajgandhi/project/suction_challenge/data/label_crop_hand/top_camera/*.png') + glob.glob('/private/home/dhirajgandhi/project/suction_challenge/sampled_data_cropped_annotated/*.png')
 
     color_data.sort() 
     label_data.sort()
 
-    out_file = open(root + '/data.txt', 'w')
-    train_out_file = open(root + '/train_data.txt', 'w')
-    val_out_file = open(root + '/val_data.txt', 'w')
+    out_file = open('/private/home/dhirajgandhi/project/suction_challenge/data_v_2.txt', 'w')
+    train_out_file = open('/private/home/dhirajgandhi/project/suction_challenge/train_data_v_2.txt', 'w')
+    val_out_file = open( '/private/home/dhirajgandhi/project/suction_challenge/val_data_v_2.txt', 'w')
     train_ratio = 0.9
 
     for i in range(len(color_data)):
@@ -32,6 +33,7 @@ def enumerate_data(**args):
     out_file.close()
     train_out_file.close()
     val_out_file.close()
+    embed()
 
 
 if __name__ == '__main__':
