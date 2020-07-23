@@ -2,7 +2,7 @@
 import random
 from IPython import embed
 
-file_name = 'transition_annot_file_v_4.txt'
+file_name = 'transition_annot_file_v_1.txt'
 out_train_file = open(file_name[:-4] + '_balanced_train.txt','w')
 out_test_file = open(file_name[:-4] + '_balanced_test.txt', 'w')
 

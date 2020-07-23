@@ -47,12 +47,9 @@ use_multigpu = args.use_multigpu
 crop_img = args.crop_img
 model_path = args.resume
 test_data_file_path = os.path.join(root_path, args.test_data_file_path)
-prob_thr = [0.2, 0.5, 0.7, 0.9, 0.95, 0.97, 0.99]
 
 # create out file ==============================================================
-out_file = []
-for p in prob_thr:
-    out_file.append(open('stack_prediction_{}.txt'.format(str(p).replace('.','_')), 'w'))
+out_file = open('stack_prediction_{}.txt'.format(model_path.split('/')[-2]), 'w')
 
 # define the device ============================================================
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -100,13 +97,10 @@ def test():
             path = data['path']
             pred_mask = model(inp)
             pred_prob = F.sigmoid(pred_mask)
-            pred_mask_flat = pred_mask.view(-1)
-            for p_indx, p_thr in enumerate(prob_thr):
-                pred_prob_bin = pred_mask_flat >= p_thr
-                for i, l in enumerate(pred_prob_bin):
-                    out_file[p_indx].write(path[i] + ' ' + str(int(l.data.cpu().item())) + '\n')
+            pred_mask_flat = pred_prob.view(-1)
+            for i, l in enumerate(pred_mask_flat):
+                out_file.write(path[i] + ' ' + str(float(l.data.cpu().item())) + '\n')
 
 test()
 
-for f in out_file:
-    f.close()
+out_file.close()
